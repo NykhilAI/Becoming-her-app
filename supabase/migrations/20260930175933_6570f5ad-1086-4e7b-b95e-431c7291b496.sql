@@ -1,0 +1,1 @@
+ALTER TABLE public.profiles ADD COLUMN reading_scale real NOT NULL DEFAULT 1, ADD COLUMN reading_leading real NOT NULL DEFAULT 1;

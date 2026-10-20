@@ -1,0 +1,18 @@
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { useQuery } from "@tanstack/react-query";
+import { ArrowRight, BookOpen, CheckCircle2 } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { AppShell } from "@/components/app-shell";
+import { PartList } from "@/components/part-list";
+import { Button } from "@/components/ui/button";
+import { Progress } from "@/components/ui/progress";
+
+export const Route = createFileRoute("/_authenticated/dashboard")({ head: () => ({ meta: privateMeta("Your Journal — Becoming Her", "Continue your private Becoming Her journey.") }), component: Dashboard });
+function Dashboard() {
+  const { user } = Route.useRouteContext();
+  const { data } = useQuery({ queryKey: ["dashboard", user.id], queryFn: async () => { const [profile, progress] = await Promise.all([supabase.from("profiles").select("display_name").eq("id", user.id).maybeSingle(), supabase.from("chapter_progress").select("is_completed,chapters(chapter_number)").eq("user_id", user.id)]); const rows = progress.data ?? []; return { name: profile.data?.display_name ?? user.user_metadata?.['display_name'] ?? "friend", completed: rows.filter((p) => p.is_completed).length, chapterOneDone: rows.some((p) => p.is_completed && p.chapters?.chapter_number === 1) }; } });
+  const completed = data?.completed ?? 0;
+  const percent = Math.round((completed / 54) * 100);
+  return <AppShell><section><p className="eyebrow">Becoming Her</p><h1 className="mt-3 font-display text-[clamp(2.5rem,11vw,3.5rem)] leading-[1.03]">Welcome back, <em className="text-primary">{data?.name}.</em></h1></section><section className="mt-10 border-y border-border py-7"><p className="eyebrow">{data?.chapterOneDone ? "Return to your reading" : "Continue your journey"}</p><p className="mt-4 text-sm text-muted-foreground">Part I · Chapter 1</p><h2 className="mt-2 font-display text-3xl leading-tight">Before There Was “Him,” There Was God</h2><Button asChild className="mt-6 w-full sm:w-auto" size="lg" variant="journal"><Link to="/chapter/$chapterNumber" params={{ chapterNumber: "1" }}>{data?.chapterOneDone ? "Revisit this chapter" : "Continue"} <ArrowRight /></Link></Button></section><section className="mt-10"><div className="grid grid-cols-[minmax(0,1fr)_auto] items-end gap-4"><div className="min-w-0"><p className="eyebrow">Progress</p><p className="mt-2 font-display text-2xl">{completed} of 54 chapters completed</p></div><span className="font-display text-2xl text-primary">{percent}%</span></div><Progress value={percent} className="mt-4 h-1" /></section><section className="mt-14"><p className="eyebrow">Your journey</p><div className="mt-5"><PartList interactive /></div></section><section className="mt-12 grid gap-px bg-border sm:grid-cols-3"><Link to="/journal" className="bg-background p-5"><BookOpen className="size-5 text-primary"/><p className="mt-3 font-display text-xl">Journal history</p></Link><Link to="/journey" className="bg-background p-5"><CheckCircle2 className="size-5 text-primary"/><p className="mt-3 font-display text-xl">Completed chapters</p></Link><Link to="/profile" className="bg-background p-5"><ArrowRight className="size-5 text-primary"/><p className="mt-3 font-display text-xl">Account settings</p></Link></section></AppShell>;
+}
+function privateMeta(title: string, description: string) { return [{ title }, { name: "description", content: description }, { property: "og:title", content: title }, { property: "og:description", content: description }, { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary" }, { name: "robots", content: "noindex,nofollow" }]; }

@@ -1,0 +1,9 @@
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { Brand } from "@/components/brand";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+
+export const Route = createFileRoute("/reset-password")({ head: () => ({ meta: [{ title: "Reset Password — Becoming Her" }, { name: "description", content: "Set a new password for your private Becoming Her journal." }, { property: "og:title", content: "Reset Password — Becoming Her" }, { property: "og:description", content: "Set a new password for your private Becoming Her journal." }, { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary" }, { name: "robots", content: "noindex" }] }), component: ResetPage });
+function ResetPage() { const [password, setPassword] = useState(""); const [message, setMessage] = useState(""); const navigate = useNavigate(); async function submit(e: React.FormEvent) { e.preventDefault(); if (password.length < 8) return setMessage("Use at least 8 characters."); const params = new URLSearchParams(window.location.hash.slice(1)); if (params.get("type") !== "recovery") return setMessage("This reset link is invalid or expired."); const { error } = await supabase.auth.updateUser({ password }); if (error) setMessage(error.message); else navigate({ to: "/dashboard" }); } return <main className="flex min-h-screen items-center justify-center px-5"><form onSubmit={submit} className="w-full max-w-sm"><Brand /><h1 className="mt-10 font-display text-4xl">Choose a new password.</h1><Input className="mt-7 h-12" type="password" value={password} onChange={(e) => setPassword(e.target.value)} minLength={8} maxLength={72} /><Button className="mt-4 w-full" size="lg" variant="journal">Save new password</Button>{message && <p className="mt-4 text-sm text-primary">{message}</p>}</form></main>; }
